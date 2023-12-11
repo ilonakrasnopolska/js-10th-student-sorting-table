@@ -2,6 +2,18 @@ const container = createDiv('container') //create container
 const sectionLeft = createDiv('section-left') //create section left
 const sectionRight = createDiv('section-right') //create section right
 const subtitle = createTitle('h1', 'title', 'NEW STUDENT') //create title
+const table = createList('table', 'table_id') //create table
+
+//array of student
+const arrayOfStudent = [
+  {
+    name: 'Ilona',
+    surname: 'Sue',
+    data: '09.07.1999',
+    faculty: 'IT',
+    startStudy: '01.01.2022'
+  }
+]
 
 //func create tag div
 function createDiv(className) {
@@ -62,6 +74,7 @@ function createList(className, id) {
 function getFormAddNewStudent() {
   const form = createForm('form', 'form') //create form
   const button = createButton('form__btn', 'ADD STUDENT', 'form-btn') //create button
+  button.type = 'submit'
 
   const inputComponents = [ //arr of input details
     {
@@ -83,7 +96,7 @@ function getFormAddNewStudent() {
       type: 'text',
       id: 'input-study-finish',
       placeholder: 'FACULTY',
-    }, 
+    },
     {
       type: 'text',
       id: 'input-study-finish',
@@ -105,6 +118,27 @@ function getFormAddNewStudent() {
   }
 
   sectionLeft.append(form)
+
+  form.addEventListener('submit', function (event) {
+    event.preventDefault() //Предотвращаем стандартное поведение отправки формы
+
+    let studentObj = {} //create new obj
+    const keysOfObj = ['name', 'surname', 'data', 'faculty', 'startStudy']
+
+    const input = document.querySelectorAll('.form__input') //find all inputs
+
+    for (i = 0; i < input.length; i++) {
+      const inputValue = input[i].value //get input[i] value
+
+      studentObj[keysOfObj[i]] = inputValue //add to obj input value to key
+
+      input[i].value = '' //clear input 
+    }
+
+    arrayOfStudent.push(studentObj) //add obj to array 
+    renderTable(arrayOfStudent); // Update table when new student is added
+
+  })
 
   return form
 }
@@ -150,6 +184,10 @@ function createFilter() {
     filterInput.type = type //add type
     filterInput.name = name //add name
 
+    if (filterInput.type == 'number') { //if type number
+      filterInput.setAttribute('min', '2000') //add min 2000
+    }
+
     filterForm.append(filterLabel, filterInput)
   }
 
@@ -160,7 +198,6 @@ function createFilter() {
 
 //func create table
 function createTable() {
-  const table = createList('table', 'table_id') //create table
   const item = document.createElement('li') //create li
   item.classList.add('table__sort__data') //add class name
   item.id = 'table__sort__data' //add id
@@ -188,26 +225,54 @@ function createTable() {
     },
   ]
 
-  for(let i = 0; i < 5; i++) {
-    const {text, id} = btnDetails[i] //get data from array of objects
+  for (let i = 0; i < btnDetails.length; i++) {
+    const { text, id } = btnDetails[i] //get data from array of objects
 
-    const tableButton = createButton('table__sorting-btn', text , id) //create li
+    const tableButton = createButton('table__sorting-btn', text, id) //create li
     tableButton.classList.add(`sort-btn${i + 1}`) //add new class
 
     item.append(tableButton)
   }
 
-  table.append(item)
-  sectionRight.append(table)
+  table.append(item) //add li with buttons to table
 
+  sectionRight.append(table)
   return table
 }
 
-sectionLeft.append(subtitle)
+//func render table
+function renderTable(arr) {
 
-getFormAddNewStudent() //call func get new student info
-createFilter() //call func create filter form
-createTable() //call func create table
+  for (let i = 0; i < arr.length; i++) {
+    const studentItem = document.createElement('li')
+    studentItem.classList.add('table__sort__student')
 
-container.append(sectionLeft, sectionRight)
+    const student = arr[i] //get obj[i]
+
+    for (const key in student) { //for all keu in arr
+      if (Object.prototype.hasOwnProperty.call(student, key)) {
+        const studentData = createButton('table__sort-data', student[key]) //create btn
+        studentItem.appendChild(studentData);
+      }
+    }
+    table.append(studentItem) //add li to table
+  }
+}
+
+//func render dom
+function renderDom() {
+  table.innerHTML = '' //clear table
+  sectionLeft.append(subtitle) //create title 
+
+  getFormAddNewStudent() //call func get new student info
+  createFilter() //call func create filter form
+  createTable() //call func create table
+  renderTable(arrayOfStudent) // Update table when new student is added
+
+
+  container.append(sectionLeft, sectionRight) //add to container
+}
+
+renderDom() //call func to create DOM
+
 document.body.append(container)
