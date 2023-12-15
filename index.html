@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -8,8 +9,19 @@
   <link rel="stylesheet" href="./css/normalize.css">
   <link rel="stylesheet" href="./css/style.css">
 </head>
+
 <body>
-  
-  <script src="./main.js"></script>
+  <div id="container" class="container">
+    <div class="section-left"></div>
+    <div class="section-right"></div>
+  </div>
+
+  <script defer src="./main.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      renderDom(document.getElementById('container'), document.querySelector('.section-left'), document.querySelector('.section-right'))
+    })
+  </script>
 </body>
+
 </html>
