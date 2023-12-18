@@ -5,7 +5,7 @@ const table = createList('table', 'table_id') //create table
 const arrayOfStudent = [
   {
     fullName: 'Ilona Sue',
-    data: '09.07.1999',
+    data: '1999-07-09',
     faculty: 'IT',
     startStudy: '2022'
   }
@@ -147,13 +147,6 @@ function validation(form) {
   }
 
   function allInputConditions(input) { //func wrapper for all input conditions
-    if (input.dataset.minLength) { //check min-length 
-      if (input.value.trim().length < input.dataset.minLength) {
-        removeError(input)
-        createError(input, `Minimum number of characters ${input.dataset.minLength}`)
-        result = false
-      }
-    }
 
     if (input.dataset.maxLength) { //check max-length = 15
       if (input.value.trim().length > input.dataset.maxLength) {
@@ -238,8 +231,9 @@ function getFormAddNewStudent(sectionLeft) {
       },
       {
         type: 'text',
-        id: 'input-faculty',
-        placeholder: 'FACULTY',
+        id: 'select-faculty',
+        isSelect: true, // Flag for select
+        options: ['IT', 'Engineering', 'Medicine', 'Art'], // Options for select
       },
       {
         type: 'number',
@@ -253,39 +247,53 @@ function getFormAddNewStudent(sectionLeft) {
 
     //create all inputs
     for (let i = 0; i < inputComponents.length; i++) { //add input and input box
-      const { type, id, placeholder } = inputComponents[i] //get data from array of objects
+      const { type, id, placeholder, isSelect, options } = inputComponents[i] //get data from array of objects
 
-      const inputBox = createDiv('form__input-box') //create input box
-      const input = createInput('form__input', id) //create input
+      if (isSelect) { // If it's a select
+        const select = document.createElement('select')
+        select.id = id // Assign id to select
+        select.classList.add('form__select') // Add class to select
 
-      input.placeholder = placeholder //add placeholder
-      input.type = type //add type
+        // Create options for select
+        for (const optionText of options) {
+          const option = document.createElement('option')
+          option.value = optionText
+          option.textContent = optionText
+          select.appendChild(option)
+        }
 
-      if (input.type == 'text') {
-        input.setAttribute('data-required', 'true') //add check to first input
+        const inputBox = createDiv('form__input-box')
+        inputBox.appendChild(select)
+        form.appendChild(inputBox)
       }
+      else {
+        const inputBox = createDiv('form__input-box') //create input box
+        const input = createInput('form__input', id) //create input
 
-      if (input.id == 'input-surname') {
-        input.setAttribute('data-max-length', '15') //add max-length to input surname
+        input.placeholder = placeholder //add placeholder
+        input.type = type //add type
+
+        if (input.type == 'text') {
+          input.setAttribute('data-required', 'true') //add check to first input
+        }
+
+        if (input.id == 'input-surname') {
+          input.setAttribute('data-max-length', '15') //add max-length to input surname
+        }
+
+        if (input.type == 'number') {
+          input.setAttribute('min', '2000') //min 2000
+          input.setAttribute('max', `${currentYear}`) //max current year
+        }
+
+        if (input.type == 'date') {
+          input.setAttribute('min', '1900-01-01') //min 2000
+        }
+
+        inputBox.append(input)
+        form.append(inputBox)
       }
-
-      if (input.id == 'input-faculty') {
-        input.setAttribute('data-min-length', '2') //add min-length
-      }
-
-      if (input.type == 'number') {
-        input.setAttribute('min', '2000') //min 2000
-        input.setAttribute('max', `${currentYear}`) //max current year
-      }
-
-      if (input.type == 'date') {
-        input.setAttribute('min', '1900-01-01') //min 2000
-      }
-
-      inputBox.append(input)
-      form.append(inputBox)
     }
-
     form.append(button)
   }
 
@@ -313,25 +321,32 @@ function getFormAddNewStudent(sectionLeft) {
     event.preventDefault() //Предотвращаем стандартное поведение отправки формы
 
     const studentObj = {} //create new obj
-    const input = document.querySelectorAll('.form__input') //find all inputs
+    const inputs = document.querySelectorAll('.form__input') //find all inputs
+    const select = document.getElementById('select-faculty') //find select
 
     if (validation(this) == true) { //call validation
       alert('Congratulations!The new student added!')
 
       // Create fullName by combining the first and second inputs
-      const fullName = input[0].value + ' ' + input[1].value;
+      const fullName = inputs[0].value + ' ' + inputs[1].value;
       studentObj['fullName'] = fullName;
 
-      const keysOfObj = ['data', 'faculty', 'startStudy']; // Define keys for the object properties
+      const keysOfObj = ['data', 'faculty', 'startStudy'];
+      let selectIndex = 0;
 
-      // Iterate over inputs starting from the third one (index 2) to assign values to studentObj
-      for (let i = 2; i < input.length; i++) {
-        studentObj[keysOfObj[i - 2]] = input[i].value;
-        input[i].value = ''; // Clear input value
+      for (let i = 2; i < inputs.length + 1; i++) {
+        if (keysOfObj[i - 2] === 'faculty') {
+          studentObj[keysOfObj[i - 2]] = select.value;
+          selectIndex = 1;
+        } else {
+          studentObj[keysOfObj[i - 2]] = inputs[i - selectIndex].value;
+          inputs[i - selectIndex].value = '';
+        }
       }
 
-      arrayOfStudent.push(studentObj); // Push the student object to the array
-      renderTable(arrayOfStudent); // Render the table with the added student
+      arrayOfStudent.push(studentObj) // Push the student object to the array
+      console.log(arrayOfStudent)
+      renderTable(arrayOfStudent) // Render the table with the added student
 
       form.reset() // Reset the form after submission
     }
@@ -396,28 +411,54 @@ function createFilter(sectionRight) {
   return filterForm
 }
 
+//func create sort of table
+function sortByKey(array, key) {
+  return array.sort((a, b) => {
+    if (key === 'data') {
+      const valueA = calcAge(a['data'])
+      const valueB = calcAge(b['data'])
+      return valueA - valueB;
+    } else {
+      const valueA = a[key].toUpperCase() // Преобразуем в верхний регистр для удобства сравнения
+      const valueB = b[key].toUpperCase()
+
+      if (valueA < valueB) {
+        return -1 // Возвращаем отрицательное число, если valueA меньше valueB
+      }
+      if (valueA > valueB) {
+        return 1 // Возвращаем положительное число, если valueA больше valueB
+      }
+      return 0 // Возвращаем 0, если значения равны
+    }
+  })
+}
+
 //func create table
 function createTable(sectionRight) {
   const item = document.createElement('li') //create li
   item.classList.add('table__sort__data') //add class name
   item.id = 'table__sort__data' //add id
 
-  const btnDetails = [ //arr of btn details
+  const btnDetails = [ //arr of btn
     {
       text: 'NAME',
       id: 'sorting-name',
+      key: 'fullName',
     },
     {
       text: 'AGE',
       id: 'sorting-age',
+      key: 'data',
     },
     {
       text: 'FACULTY',
       id: 'sorting-faculty',
+      key: 'faculty',
     },
     {
       text: 'EDUCATION',
       id: 'sorting-study-start',
+      key: 'startStudy',
     },
     {
       text: 'remove',
@@ -426,10 +467,17 @@ function createTable(sectionRight) {
   ]
 
   for (let i = 0; i < btnDetails.length; i++) {
-    const { text, id } = btnDetails[i] //get data from array of objects
+    const { text, id, key } = btnDetails[i] //get data from array of objects
 
     const tableButton = createButton('table__sorting-btn', text, id) //create li
     tableButton.classList.add(`sort-btn${i + 1}`) //add new class
+
+    if (key) { //call func for sorting if click on button
+      tableButton.addEventListener('click', function () {
+        sortByKey(arrayOfStudent, key)
+        renderTable(arrayOfStudent)
+      })
+    }
 
     item.append(tableButton)
   }
@@ -445,12 +493,17 @@ function createStudentAtTable(studentObj) {
   const studentItem = document.createElement('li')
   studentItem.classList.add('table__sort__student')
 
-  let studentFullName = createButton('table__sort-data', `${studentObj.fullName}`)
-  let studentAge = createButton('table__sort-data', `${calcAge(studentObj.data).toString()}`)
-  let studentFaculty = createButton('table__sort-data', `${studentObj.faculty}`)
-  let studentEducation = createButton('table__sort-data', `${calcYearsOfStudy(studentObj.startStudy).toString()}`)
+  let studentFullName = createButton('table__sort-data', `${studentObj.fullName}`, 'student-name')
+  let studentAge = createButton('table__sort-data', `${calcAge(studentObj.data).toString()}`, 'student-age')
+  let studentFaculty = createButton('table__sort-data', `${studentObj.faculty}`, 'student-faculty')
+  let studentEducation = createButton('table__sort-data', `${calcYearsOfStudy(studentObj.startStudy).toString()}`, 'student-education')
 
-  studentItem.append(studentFullName, studentAge, studentFaculty, studentEducation)
+  let removeStudent = createButton('table__sort-remove', '', 'remove-student')
+  removeStudent.addEventListener('click', function (event) { //for adding new class if we want delete it 
+    studentItem.classList.toggle('chosen')
+  })
+
+  studentItem.append(studentFullName, studentAge, studentFaculty, studentEducation, removeStudent)
 
   table.append(studentItem) //add li to table
 

@@ -83,6 +83,20 @@ label {
   background-color: rgb(255, 255, 255);
 }
 
+.form__select {
+  width: 100%;
+  padding: 5px 5px;
+  outline: none;
+  background-color: rgb(212, 245, 234);
+  border: 1px solid rgb(37, 137, 136);
+  border-radius: 5px;
+  transition: background-color .3s ease-in-out;
+}
+
+.form__select:focus {
+  background-color: rgb(255, 255, 255);
+}
+
 .form__btn {
   position: relative;
   width: 100%;
@@ -140,7 +154,7 @@ label {
 }
 
 .filter-form__btn {
-  width: 60%;
+  width: 70%;
   padding: 5px 5px;
   border-radius: 25px;
   background-color: rgb(224, 228, 228);
@@ -197,9 +211,31 @@ label {
 
 .table__sort__student {
   width: 100%;
+  position: relative;
   display: flex;
+  align-items: center;
   background-color: rgb(233, 229, 229);
 }
+
+.table__sort__student::after {
+  content: '';
+  position: absolute;
+  top: 12px;
+  right: 45px;
+  width: 15px;
+  height: 20px;
+  border: 1px solid black;
+}
+
+.table__sort__student.chosen {
+  border: 2px solid rgb(255, 6, 6);
+}
+
+.table__sort__student.chosen::after {
+  content: 'X';
+  color: rgb(255, 6, 6);
+  border: 2px solid rgb(255, 6, 6);
+} 
 
 .table__sort-data {
   width: 110px;
@@ -207,9 +243,16 @@ label {
   padding: 5px 10px;
   font-size: 15px;
   background-color: rgb(233, 229, 229);
-  border: 1px solid black;
+  border: none;
   outline: none;
   cursor: auto;
+}
+
+.table__sort-remove {
+  width: 105px;
+  height: 20px;
+  opacity: 0;
+  z-index: 5;
 }
 
 .form__input-box.error  {
