@@ -48,7 +48,7 @@ label {
   max-width: 1920px;
   margin: 0 auto;
   display: flex;
-  justify-content: space-around;
+  justify-content: space-evenly;
   padding: 0 20px;
 }
 
@@ -215,6 +215,7 @@ label {
   display: flex;
   align-items: center;
   background-color: rgb(233, 229, 229);
+  transition: background-color .3s ease-in-out;
 }
 
 .table__sort__student::after {
@@ -228,7 +229,7 @@ label {
 }
 
 .table__sort__student.chosen {
-  border: 2px solid rgb(255, 6, 6);
+  background-color: rgb(212, 245, 234);
 }
 
 .table__sort__student.chosen::after {
@@ -246,6 +247,11 @@ label {
   border: none;
   outline: none;
   cursor: auto;
+  transition: background-color .3s ease-in-out;
+}
+
+.table__sort__student.chosen .table__sort-data  {
+  background-color: rgb(212, 245, 234);
 }
 
 .table__sort-remove {
