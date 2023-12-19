@@ -1,15 +1,24 @@
 const subtitle = createTitle('h1', 'title', 'NEW STUDENT') //create title
 const table = createList('table', 'table_id') //create table
 
+//func for get set info to local storage
+function saveDataToLocalStorage(key, objArr) {
+  localStorage.setItem(key, JSON.stringify(objArr))
+}
+
 //array of student
-const arrayOfStudent = [
-  {
-    fullName: 'Ilona Sue',
-    data: '1999-07-09',
-    faculty: 'IT',
-    startStudy: '2022'
-  }
-]
+let arrayOfStudent = []
+
+//key for local storage
+const keyName = 'students'
+
+//to get empty object at local storage
+const data = localStorage.getItem(keyName)
+
+//if array not empty to do parse
+if (data !== "" && data !== null) {
+  arrayOfStudent = JSON.parse(data)
+}
 
 //func create tag div
 function createDiv(className) {
@@ -206,8 +215,55 @@ function validation(form) {
   return result
 }
 
+//func create sort of table
+function sortByKey(array, key) {
+  return array.sort((a, b) => {
+    if (key === 'data') {
+      const valueA = calcAge(a['data'])
+      const valueB = calcAge(b['data'])
+      return valueA - valueB;
+    } else {
+      const valueA = a[key].toUpperCase() // Преобразуем в верхний регистр для удобства сравнения
+      const valueB = b[key].toUpperCase()
+
+      if (valueA < valueB) {
+        return -1 // Возвращаем отрицательное число, если valueA меньше valueB
+      }
+      if (valueA > valueB) {
+        return 1 // Возвращаем положительное число, если valueA больше valueB
+      }
+      return 0 // Возвращаем 0, если значения равны
+    }
+  })
+}
+
+//func remove student
+function removeStudent() {
+  const chosenStudents = table.querySelectorAll('li.table__sort__student.chosen') //get all students
+
+  if (chosenStudents.length > 0) { //if length > 0
+
+    chosenStudents.forEach(chosenStudent => {
+      const studentName = chosenStudent.querySelector('.table__sort-data#student-name').textContent.trim();
+      const studentIndex = arrayOfStudent.findIndex(student => student.fullName === studentName)
+
+      if (studentIndex !== -1) {
+        arrayOfStudent.splice(studentIndex, 1)
+        chosenStudent.remove()
+        renderStudentTable(arrayOfStudent)
+        saveDataToLocalStorage(keyName, arrayOfStudent)
+      }
+
+    })
+
+  } else {
+    alert(`You haven't chosen anything!`)
+  }
+}
+
 //func create form for adding new student
 function getFormAddNewStudent(sectionLeft) {
+
   const form = createForm('form', 'form') //create form
   const button = createButton('form__btn', 'ADD STUDENT', 'form-btn') //create button
   button.type = 'submit'
@@ -313,47 +369,37 @@ function getFormAddNewStudent(sectionLeft) {
 
   renderForm() //call func to create form
 
-  sectionLeft.append(form)
-
   addInputListeners(form) //call func for remove error if user enter the new value after error in input
 
   form.addEventListener('submit', function (event) {
     event.preventDefault() //Предотвращаем стандартное поведение отправки формы
 
-    const studentObj = {} //create new obj
     const inputs = document.querySelectorAll('.form__input') //find all inputs
     const select = document.getElementById('select-faculty') //find select
 
     if (validation(this) == true) { //call validation
       alert('Congratulations!The new student added!')
 
+
       // Create fullName by combining the first and second inputs
-      const fullName = inputs[0].value + ' ' + inputs[1].value;
-      studentObj['fullName'] = fullName;
+      const fullName = inputs[0].value + ' ' + inputs[1].value; // Создаем полное имя
 
-      const keysOfObj = ['data', 'faculty', 'startStudy'];
-      let selectIndex = 0;
+      const studentObj = { // Создаем объект для студента
+        fullName,
+        data: inputs[2].value, // Предполагаем, что третий инпут - дата рождения
+        faculty: select.value,
+        startStudy: inputs[3].value // Предполагаем, что четвертый инпут - год начала обучения
+      };
 
-      for (let i = 2; i < inputs.length + 1; i++) {
-        if (keysOfObj[i - 2] === 'faculty') {
-          studentObj[keysOfObj[i - 2]] = select.value;
-          selectIndex = 1;
-        } else {
-          studentObj[keysOfObj[i - 2]] = inputs[i - selectIndex].value;
-          inputs[i - selectIndex].value = '';
-        }
-      }
+      arrayOfStudent.push(studentObj) // Добавляем объект студента в массив
+      saveDataToLocalStorage(keyName, arrayOfStudent)
+      renderStudentTable(arrayOfStudent) // Отображаем таблицу с добавленным студентом
 
-      arrayOfStudent.push(studentObj) // Push the student object to the array
-      console.log(arrayOfStudent)
-      renderTable(arrayOfStudent) // Render the table with the added student
-
-      form.reset() // Reset the form after submission
+      form.reset() // Сбрасываем форму после отправки
     }
-
-    form.reset() // Reset the form after submission
-
   })
+
+  sectionLeft.append(form)
 
   return form
 }
@@ -362,6 +408,7 @@ function getFormAddNewStudent(sectionLeft) {
 function createFilter(sectionRight) {
   const filterForm = createForm('nav', 'filter_form') //create filter form
   const filterTitle = createTitle('h3', 'filter-form__title', 'FILTER BY') //create title of filter
+  const today = new Date(); // current date
 
   const labels = ['name', 'faculty', 'start educ:', 'finish educ:'] //array of label text
   const inputDetails = [ //arr of input details
@@ -401,6 +448,7 @@ function createFilter(sectionRight) {
 
     if (filterInput.type == 'number') { //if type number
       filterInput.setAttribute('min', '2000') //add min 2000
+      filterInput.setAttribute('max', today.getFullYear()) //add max
     }
 
     filterForm.append(filterLabel, filterInput)
@@ -411,27 +459,26 @@ function createFilter(sectionRight) {
   return filterForm
 }
 
-//func create sort of table
-function sortByKey(array, key) {
-  return array.sort((a, b) => {
-    if (key === 'data') {
-      const valueA = calcAge(a['data'])
-      const valueB = calcAge(b['data'])
-      return valueA - valueB;
-    } else {
-      const valueA = a[key].toUpperCase() // Преобразуем в верхний регистр для удобства сравнения
-      const valueB = b[key].toUpperCase()
+//func create of filter settings
+function getFilterSettings() {
+ 
+  // // Сортировка отфильтрованных студентов по алфавиту (по полному имени)
+  // arrayOfStudent.sort((a, b) => {
+  //   const nameA = a.fullName.toLowerCase(); // Преобразовываем имена в нижний регистр для корректной сортировки
+  //   const nameB = b.fullName.toLowerCase();
+    
+  //   if (nameA < nameB) {
+  //     return -1; // Возвращаем отрицательное число, если nameA меньше nameB
+  //   }
+  //   if (nameA > nameB) {
+  //     return 1; // Возвращаем положительное число, если nameA больше nameB
+  //   }
+  //   return 0; // Возвращаем 0, если значения равны
+  // });
 
-      if (valueA < valueB) {
-        return -1 // Возвращаем отрицательное число, если valueA меньше valueB
-      }
-      if (valueA > valueB) {
-        return 1 // Возвращаем положительное число, если valueA больше valueB
-      }
-      return 0 // Возвращаем 0, если значения равны
-    }
-  })
+  // return filteredStudents; // Возвращаем отфильтрованный и отсортированный массив студентов
 }
+
 
 //func create table
 function createTable(sectionRight) {
@@ -475,11 +522,17 @@ function createTable(sectionRight) {
     if (key) { //call func for sorting if click on button
       tableButton.addEventListener('click', function () {
         sortByKey(arrayOfStudent, key)
-        renderTable(arrayOfStudent)
+        renderStudentTable(arrayOfStudent)
       })
     }
 
     item.append(tableButton)
+
+    if (tableButton.id === 'sorting-remove') { //add event kistener to btn remove
+      tableButton.addEventListener('click', function () {
+        removeStudent() //call func to remove
+      })
+    }
   }
 
   table.append(item) //add li with buttons to table
@@ -506,31 +559,32 @@ function createStudentAtTable(studentObj) {
   studentItem.append(studentFullName, studentAge, studentFaculty, studentEducation, removeStudent)
 
   table.append(studentItem) //add li to table
-
 }
 
 //func render table
-function renderTable(newStudent) {
-  let li = table.querySelectorAll('.table__sort__student')
+function renderStudentTable(newStudent) {
+  const existingRows = document.querySelectorAll('.table__sort__student') // find all rows with student
 
-  li.forEach(studentItem => {
-    studentItem.remove();
-  });
+  // clear rows with students before rendering
+  existingRows.forEach(row => {
+    row.remove()
+  })
 
   for (let i = 0; i < newStudent.length; i++) {
-    createStudentAtTable(newStudent[i])
+    createStudentAtTable(newStudent[i]) //render student list
   }
 
 }
 
 //func render dom
 function renderDom(container, sectionLeft, sectionRight) {
+
   sectionLeft.append(subtitle) //create title 
 
   getFormAddNewStudent(sectionLeft) //call func get new student info
   createFilter(sectionRight) //call func create filter form
   createTable(sectionRight) //call func create table
-  renderTable(arrayOfStudent) // Update table with the last student added
+  renderStudentTable(arrayOfStudent) // Update table with the last student added
 
 
   container.append(sectionLeft, sectionRight) //add to container
@@ -539,3 +593,4 @@ function renderDom(container, sectionLeft, sectionRight) {
 }
 
 window.renderDom = renderDom
+
