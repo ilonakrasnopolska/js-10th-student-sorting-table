@@ -451,6 +451,8 @@ function createFilter(sectionRight) {
       filterInput.setAttribute('max', today.getFullYear()) //add max
     }
 
+    filterInput.addEventListener('input', applyFilters) //call func for filtering
+
     filterForm.append(filterLabel, filterInput)
   }
 
@@ -460,23 +462,24 @@ function createFilter(sectionRight) {
 }
 
 //func create of filter settings
-function getFilterSettings() {
- 
-  // // Сортировка отфильтрованных студентов по алфавиту (по полному имени)
-  // arrayOfStudent.sort((a, b) => {
-  //   const nameA = a.fullName.toLowerCase(); // Преобразовываем имена в нижний регистр для корректной сортировки
-  //   const nameB = b.fullName.toLowerCase();
-    
-  //   if (nameA < nameB) {
-  //     return -1; // Возвращаем отрицательное число, если nameA меньше nameB
-  //   }
-  //   if (nameA > nameB) {
-  //     return 1; // Возвращаем положительное число, если nameA больше nameB
-  //   }
-  //   return 0; // Возвращаем 0, если значения равны
-  // });
+function applyFilters() {
+  //get all inputs values 
+  const filterName = document.getElementById('filter-name').value.toLowerCase().trim()
+  const filterFaculty = document.getElementById('filter-faculty').value.toLowerCase().trim()
+  const filterStartStudy = parseInt(document.getElementById('filter-study-start').value)
+  const filterEndStudy = parseInt(document.getElementById('filter-study-finish').value)
 
-  // return filteredStudents; // Возвращаем отфильтрованный и отсортированный массив студентов
+  //create const that gets array of student and use func filter by ...
+  const filteredStudents = arrayOfStudent.filter(student => {
+    const nameMatch = student.fullName.toLowerCase().includes(filterName)
+    const facultyMatch = student.faculty.toLowerCase().includes(filterFaculty)
+    const startStudyMatch = parseInt(student.startStudy, 10) === filterStartStudy || !filterStartStudy
+    const endStudyMatch = parseInt(student.startStudy, 10) + 4 === filterEndStudy || !filterEndStudy
+
+    return nameMatch && facultyMatch && startStudyMatch && endStudyMatch
+  })
+
+  renderStudentTable(filteredStudents)
 }
 
 
