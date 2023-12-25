@@ -80,7 +80,7 @@ function calcAge(birthDate) {
   const today = new Date(); // current date
   const birth = new Date(birthDate); // date of birth
 
-  let age = today.getFullYear() - birth.getFullYear(); // Разница в годах
+  let age = today.getFullYear() - birth.getFullYear() // Разница в годах
 
   return age
 }
@@ -112,6 +112,7 @@ function calcYearsOfStudy(startStudy) {
 
 //func validation of form
 function validation(form) {
+  let result = true //value of validation
 
   function createError(input, text) { //func label of input for error
     const parent = input.parentNode //get input-box
@@ -198,8 +199,6 @@ function validation(form) {
     }
   }
 
-  let result = true //value of validation
-
   const allInputs = form.querySelectorAll('input') //get all input
 
   for (const input of allInputs) { //check if input.value = empty
@@ -221,7 +220,7 @@ function sortByKey(array, key) {
     if (key === 'data') {
       const valueA = calcAge(a['data'])
       const valueB = calcAge(b['data'])
-      return valueA - valueB;
+      return valueA - valueB
     } else {
       const valueA = a[key].toUpperCase() // Преобразуем в верхний регистр для удобства сравнения
       const valueB = b[key].toUpperCase()
@@ -358,9 +357,9 @@ function getFormAddNewStudent(sectionLeft) {
 
     inputs.forEach(input => {
       input.addEventListener('input', function () {
-        const parent = this.parentNode;
+        const parent = this.parentNode
         if (parent.classList.contains('error')) {
-          parent.querySelector('.error-label').remove();
+          parent.querySelector('.error-label').remove()
           parent.classList.remove('error');
         }
       })
@@ -482,7 +481,6 @@ function applyFilters() {
   renderStudentTable(filteredStudents)
 }
 
-
 //func create table
 function createTable(sectionRight) {
   const item = document.createElement('li') //create li
@@ -555,7 +553,7 @@ function createStudentAtTable(studentObj) {
   let studentEducation = createButton('table__sort-data', `${calcYearsOfStudy(studentObj.startStudy).toString()}`, 'student-education')
 
   let removeStudent = createButton('table__sort-remove', '', 'remove-student')
-  removeStudent.addEventListener('click', function (event) { //for adding new class if we want delete it 
+  removeStudent.addEventListener('click', function () { //for adding new class if we want delete it 
     studentItem.classList.toggle('chosen')
   })
 
