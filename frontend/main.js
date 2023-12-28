@@ -1,23 +1,54 @@
+//get url from server
+const SERVER_URL = 'http://localhost:3001'
+
 const subtitle = createTitle('h1', 'title', 'NEW STUDENT') //create title
 const table = createList('table', 'table_id') //create table
+let arrayOfStudent = [] //create array of student
 
-//func for get set info to local storage
-function saveDataToLocalStorage(key, objArr) {
-  localStorage.setItem(key, JSON.stringify(objArr))
+//func add student to server
+async function serverAddStudent(obj) {
+  let response = await fetch(SERVER_URL + '/api/students', { //request to server
+    method: "POST",
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(obj),
+  })
+
+  let data = await response.json()
+
+  return data
 }
 
-//array of student
-let arrayOfStudent = []
+//func get student from server
+async function serverGetStudents() {
+  let response = await fetch(SERVER_URL + '/api/students', { //request to server
+    method: "GET",
+    headers: { 'Content-Type': 'application/json' },
+  })
 
-//key for local storage
-const keyName = 'students'
+  let data = await response.json()
 
-//to get empty object at local storage
-const data = localStorage.getItem(keyName)
+  return data
+}
 
-//if array not empty to do parse
-if (data !== "" && data !== null) {
-  arrayOfStudent = JSON.parse(data)
+//func delete student from server
+async function serverDeleteStudent(id) {
+  let response = await fetch(SERVER_URL + '/api/students/' + id, { //request to server
+    method: "DELETE",
+  })
+
+  let data = await response.json()
+
+  return data
+}
+
+//func load student and render from server
+async function loadStudentsAndRender() {
+  let serverData = await serverGetStudents(); // get data
+
+  if (serverData) {
+    arrayOfStudent = serverData; // Обновляем данные в переменной arrayOfStudent
+    renderStudentTable(arrayOfStudent) // Рендерим таблицу студентов
+  }
 }
 
 //func create tag div
@@ -80,7 +111,7 @@ function calcAge(birthDate) {
   const today = new Date(); // current date
   const birth = new Date(birthDate); // date of birth
 
-  let age = today.getFullYear() - birth.getFullYear() // Разница в годах
+  let age = today.getFullYear() - birth.getFullYear() // today - date of birth 1999
 
   return age
 }
@@ -217,9 +248,9 @@ function validation(form) {
 //func create sort of table
 function sortByKey(array, key) {
   return array.sort((a, b) => {
-    if (key === 'data') {
-      const valueA = calcAge(a['data'])
-      const valueB = calcAge(b['data'])
+    if (key === 'birthday') {
+      const valueA = calcAge(a['birthday'])
+      const valueB = calcAge(b['birthday'])
       return valueA - valueB
     } else {
       const valueA = a[key].toUpperCase() // Преобразуем в верхний регистр для удобства сравнения
@@ -237,27 +268,34 @@ function sortByKey(array, key) {
 }
 
 //func remove student
-function removeStudent() {
-  const chosenStudents = table.querySelectorAll('li.table__sort__student.chosen') //get all students
+function removeStudent(tableButton) {
+  tableButton.addEventListener('click', async function () {
+    const chosenStudents = table.querySelectorAll('li.table__sort__student.chosen') // get all chosen student
 
-  if (chosenStudents.length > 0) { //if length > 0
+    if (chosenStudents.length > 0) { //if we found somebody
+      for (const studentItem of chosenStudents) {
+        const studentFullName = studentItem.querySelector('.table__sort-data#student-name').textContent.trim() //get student full name
 
-    chosenStudents.forEach(chosenStudent => {
-      const studentName = chosenStudent.querySelector('.table__sort-data#student-name').textContent.trim();
-      const studentIndex = arrayOfStudent.findIndex(student => student.fullName === studentName)
+        // find index of chosen students at arrayOfStudent
+        const studentIndex = arrayOfStudent.findIndex(student => {
+          const fullName = `${student.name} ${student.surname}`
+          return fullName === studentFullName
+        })
 
-      if (studentIndex !== -1) {
-        arrayOfStudent.splice(studentIndex, 1)
-        chosenStudent.remove()
-        renderStudentTable(arrayOfStudent)
-        saveDataToLocalStorage(keyName, arrayOfStudent)
+        if (studentIndex !== -1) { // if student found
+          const studentIdToDelete = arrayOfStudent[studentIndex].id // get ID of chosen student
+
+          await serverDeleteStudent(studentIdToDelete) // remove from server
+          arrayOfStudent.splice(studentIndex, 1) // remove from arr
+        }
       }
 
-    })
-
-  } else {
-    alert(`You haven't chosen anything!`)
-  }
+      chosenStudents.forEach(student => student.remove()) // remove from HTML
+      renderStudentTable(arrayOfStudent) // render table
+    } else {
+      alert(`You haven't chosen anything!`); // if we didn't find students
+    }
+  })
 }
 
 //func create form for adding new student
@@ -370,7 +408,7 @@ function getFormAddNewStudent(sectionLeft) {
 
   addInputListeners(form) //call func for remove error if user enter the new value after error in input
 
-  form.addEventListener('submit', function (event) {
+  form.addEventListener('submit', async function (event) {
     event.preventDefault() //Предотвращаем стандартное поведение отправки формы
 
     const inputs = document.querySelectorAll('.form__input') //find all inputs
@@ -380,19 +418,20 @@ function getFormAddNewStudent(sectionLeft) {
       alert('Congratulations!The new student added!')
 
 
-      // Create fullName by combining the first and second inputs
-      const fullName = inputs[0].value + ' ' + inputs[1].value; // Создаем полное имя
-
-      const studentObj = { // Создаем объект для студента
-        fullName,
-        data: inputs[2].value, // Предполагаем, что третий инпут - дата рождения
+      const studentObj = { // create student object
+        name: inputs[0].value,
+        surname: inputs[1].value,
+        birthday: inputs[2].value, 
         faculty: select.value,
-        startStudy: inputs[3].value // Предполагаем, что четвертый инпут - год начала обучения
-      };
+        startStudy: inputs[3].value 
+      }
 
-      arrayOfStudent.push(studentObj) // Добавляем объект студента в массив
-      saveDataToLocalStorage(keyName, arrayOfStudent)
-      renderStudentTable(arrayOfStudent) // Отображаем таблицу с добавленным студентом
+      let serverDataObj = await serverAddStudent(studentObj) //add student to server
+
+      serverDataObj.birthday = new Date(serverDataObj.birthday)
+
+      arrayOfStudent.push(serverDataObj) // add obj to array
+      renderStudentTable(arrayOfStudent) // render student table
 
       form.reset() // Сбрасываем форму после отправки
     }
@@ -435,7 +474,7 @@ function createFilter(sectionRight) {
 
   filterForm.append(filterTitle) //add title to form
 
-  for (i = 0; i < inputDetails.length; i++) { //add label and input to form
+  for (let i = 0; i < inputDetails.length; i++) { //add label and input to form
     const { type, id, name } = inputDetails[i] //get data from array of objects
 
     const filterLabel = createLabel(labels[i])
@@ -470,12 +509,13 @@ function applyFilters() {
 
   //create const that gets array of student and use func filter by ...
   const filteredStudents = arrayOfStudent.filter(student => {
-    const nameMatch = student.fullName.toLowerCase().includes(filterName)
+    const fullName = `${student.name} ${student.surname}`.toLowerCase(); // Объединяем имя и фамилию
+    const nameSurnameMatch = fullName.includes(filterName); // Проверяем совпадение по имени и фамилии
     const facultyMatch = student.faculty.toLowerCase().includes(filterFaculty)
     const startStudyMatch = parseInt(student.startStudy, 10) === filterStartStudy || !filterStartStudy
     const endStudyMatch = parseInt(student.startStudy, 10) + 4 === filterEndStudy || !filterEndStudy
 
-    return nameMatch && facultyMatch && startStudyMatch && endStudyMatch
+    return nameSurnameMatch && facultyMatch && startStudyMatch && endStudyMatch
   })
 
   renderStudentTable(filteredStudents)
@@ -491,12 +531,12 @@ function createTable(sectionRight) {
     {
       text: 'NAME',
       id: 'sorting-name',
-      key: 'fullName',
+      key: 'name',
     },
     {
       text: 'AGE',
       id: 'sorting-age',
-      key: 'data',
+      key: 'birthday',
     },
     {
       text: 'FACULTY',
@@ -530,9 +570,7 @@ function createTable(sectionRight) {
     item.append(tableButton)
 
     if (tableButton.id === 'sorting-remove') { //add event kistener to btn remove
-      tableButton.addEventListener('click', function () {
-        removeStudent() //call func to remove
-      })
+      removeStudent(tableButton)
     }
   }
 
@@ -547,8 +585,8 @@ function createStudentAtTable(studentObj) {
   const studentItem = document.createElement('li')
   studentItem.classList.add('table__sort__student')
 
-  let studentFullName = createButton('table__sort-data', `${studentObj.fullName}`, 'student-name')
-  let studentAge = createButton('table__sort-data', `${calcAge(studentObj.data).toString()}`, 'student-age')
+  let studentFullName = createButton('table__sort-data', `${studentObj.name} ${studentObj.surname}`, 'student-name')
+  let studentAge = createButton('table__sort-data', `${calcAge(studentObj.birthday).toString()}`, 'student-age')
   let studentFaculty = createButton('table__sort-data', `${studentObj.faculty}`, 'student-faculty')
   let studentEducation = createButton('table__sort-data', `${calcYearsOfStudy(studentObj.startStudy).toString()}`, 'student-education')
 
@@ -587,6 +625,7 @@ function renderDom(container, sectionLeft, sectionRight) {
   createTable(sectionRight) //call func create table
   renderStudentTable(arrayOfStudent) // Update table with the last student added
 
+  loadStudentsAndRender() //get info with students from server
 
   container.append(sectionLeft, sectionRight) //add to container
 
