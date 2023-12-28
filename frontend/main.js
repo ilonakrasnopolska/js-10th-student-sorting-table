@@ -48,7 +48,7 @@ async function loadStudentsAndRender() {
   if (serverData) {
     arrayOfStudent = serverData; // Обновляем данные в переменной arrayOfStudent
     renderStudentTable(arrayOfStudent) // Рендерим таблицу студентов
-  }
+  } 
 }
 
 //func create tag div
